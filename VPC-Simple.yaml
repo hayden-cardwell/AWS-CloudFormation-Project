@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: An environment name for your demo Deep Security Environment!
+    Default: DeepSec
+  VpcCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+  PublicSubnetCIDR:
+    Description: An IP block for your subnet where your EC2 instances will sit!
+    Type: String
+    Default: 10.0.1.0/24
+  PrivateSubnetCIDR:
+    Description: An IP block for your subnet where your RDS instance will sit!
+    Type: String
+    Default: 10.0.2.0/24
+  PrivateSubnetCIDR2:
+    Description: An IP block for your subnet where your RDS instance will sit!
+    Type: String
+    Default: 10.0.3.0/24
+
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+
+  InternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  
+  PublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select 
+        - 1
+        - !GetAZs ''
+      CidrBlock: !Ref PublicSubnetCIDR
+      MapPublicIpOnLaunch: true
+
+  PrivateSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select 
+        - 2
+        - !GetAZs ''
+      CidrBlock: !Ref PrivateSubnetCIDR
+      MapPublicIpOnLaunch: false
+
+  PrivateSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select 
+        - 3
+        - !GetAZs ''
+      CidrBlock: !Ref PrivateSubnetCIDR2
+      MapPublicIpOnLaunch: false
+
+  PublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+    
+  PublicRouteTableAssociation:    
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  DefaultPublicRoute:
+    Type: "AWS::EC2::Route"
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      
+  PrivateRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateRouteTable2:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+    
+  PrivateRouteTableAssociation:    
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet
+
+  PrivateRouteTableAssociation2:    
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+      
+  EC2SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Completely open to the internet, in real world conditions this would be locked down. 
+      GroupName: OpenManager
+      SecurityGroupIngress:
+        -
+          CidrIp: 0.0.0.0/0
+          IpProtocol: -1
+      VpcId: !Ref VPC
+     
+  DBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Open for PostgreSQL from the EC2 Security Group.
+      SecurityGroupIngress:
+        -
+          SourceSecurityGroupId: !GetAtt EC2SecurityGroup.GroupId
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+      VpcId: !Ref VPC
+    DependsOn: EC2SecurityGroup
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: Group of Private Subnets
+      DBSubnetGroupName: DBSubnetGroup
+      SubnetIds: 
+        - !Ref PrivateSubnet
+        - !Ref PrivateSubnet2
+        
+Outputs:
+  VPC:
+    Value: !Ref VPC
+  PublicSubnet:
+    Value: !Ref PublicSubnet
+  PrivateSubnet:
+    Value: !Ref PrivateSubnet
+  EC2SecurityGroup:
+    Value: !Ref EC2SecurityGroup
+  DBSecurityGroupId:
+    Value: !GetAtt DBSecurityGroup.GroupId
+  DBSubnetGroupName: 
+    Value: !Ref DBSubnetGroup
