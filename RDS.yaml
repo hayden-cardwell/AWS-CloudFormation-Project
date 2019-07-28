@@ -1,0 +1,50 @@
+#ClosestThingToWorking
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+
+  DatabaseSize:
+    Description: Choose the amount of space you want for your Deep Security Deployment!
+    Type: String
+    Default: 10
+
+  DBInstanceClass: 
+    Description: Choose from a list of reccomended options for deploying the database on an RDS instance!
+    Type: String
+    Default: db.t2.micro
+
+  RDSMasterUsername:
+    Description: Enter a master username for your PostgreSQL database!
+    Type: String
+    Default: MasterAdmin
+
+  RDSMasterPassword:
+    Description: Enter a secure master password for the PostgreSQL database!
+    Type: String
+    Default: Password111%%%
+
+  DBSecurityGroupPara:
+    Description: Security Group for the Database. 
+    Type: List<AWS::EC2::SecurityGroup::Id>
+
+  DBSubnetGroupName:
+    Description: The database subnet group. 
+    Type: String
+
+Resources:
+  DeepSecDatabase:
+    Type:  "AWS::RDS::DBInstance"
+    Properties:
+      VPCSecurityGroups:
+        - !Join
+          - ','
+          - !Ref DBSecurityGroupPara
+      AllocatedStorage: !Ref DatabaseSize
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: postgres
+      MasterUsername: !Ref RDSMasterUsername
+      MasterUserPassword: !Ref RDSMasterPassword
+      DBSubnetGroupName: !Ref DBSubnetGroupName
+
+Outputs:
+  RDSEndpoint:
+    Value: !GetAtt Endpoint.Address
