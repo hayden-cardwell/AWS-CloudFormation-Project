@@ -13,10 +13,11 @@ systemctl enable postgresql-10.service
 mkdir /home/deepsecurity/
 tee /home/deepsecurity/database.sh <<EOF
 echo "CREATE DATABASE dsm;" | sudo -u postgres psql
-echo "CREATE ROLE MasterAdmin WITH PASSWORD 'Password111' LOGIN;" | sudo -u postgres psql
+echo "CREATE ROLE 'MasterAdmin' WITH PASSWORD 'Password111' LOGIN;" | sudo -u postgres psql
 echo "GRANT ALL ON DATABASE dsm TO MasterAdmin;" | sudo -u postgres psql
 echo "GRANT CONNECT ON DATABASE dsm TO MasterAdmin;" | sudo -u postgres psql
 EOF
+systemctl restart postgresql-10.service
 chmod +x /home/deepsecurity/database.sh
 /home/deepsecurity/database.sh
 wget -O /home/deepsecurity/Manager-Linux-12.0.296.x64.sh https://files.trendmicro.com/products/deepsecurity/en/12.0/Manager-Linux-12.0.296.x64.sh
