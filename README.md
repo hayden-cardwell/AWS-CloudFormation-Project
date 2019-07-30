@@ -1,5 +1,9 @@
 # AWS-CloudFormation-Project
+
+
 This is the Repo for the CloudFormation Project that deploys Deep Security within a VPC. 
+
+![Diagram of the Deployment](https://deep-sec-haydencardwell.s3.amazonaws.com/Cloudformation.png)
 
 Initally this project aimed to implement an RDS instance for hosting the Deep Security Manager's database, but upon testing, this idea was scrapped due to the amount of time that a database takes to intialize, on average 15 to 20 minutes. 
 
