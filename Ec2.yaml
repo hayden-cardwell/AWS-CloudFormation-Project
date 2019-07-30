@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  RedHatAMI:
+    Description: The AMI of the RedHat image!
+    Type: String
+    Default: ami-a8d369c0
+  EC2InstanceType:
+    Description: The instance size of the Deep Security Manager.
+    Type: String
+  SSHKey:
+    Description: The key for the Deep Security Manager
+    Type: String
+  PublicSubnet:
+    Description: The subnet for the Deep Security Manager to be launched into
+    Type: String
+  UserData:
+    Type: String
+  EC2SecurityGroup:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+
+Resources:
+  IAMRoleS3:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com" 
+            Action: 
+              - "sts:AssumeRole"
+      RoleName: S3Access
+      Policies:
+        -
+          PolicyName: "S3RootPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action: "S3:*"
+                Resource: "*" 
+
+  IAMProfileForS3:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      InstanceProfileName: S3AccessProfile
+      Roles:
+        - S3Access
+    DependsOn: IAMRoleS3
+  DSServer:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      IamInstanceProfile: !Ref IAMProfileForS3
+      ImageId: !Ref RedHatAMI
+      InstanceType: !Ref EC2InstanceType
+      KeyName: !Ref SSHKey
+      SecurityGroupIds: 
+        - !Join
+          - ','
+          - !Ref EC2SecurityGroup
+      UserData: !Ref UserData
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          VolumeType: gp2
+          DeleteOnTermination: false
+          VolumeSize: 30
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet 
+     

@@ -1,18 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  DatabaseSize:
-    Description: Choose the amount of space you want for your Deep Security Deployment!
-    Type: String
-    Default: 30  
-  DBInstanceClass: 
-    Description: Choose from a list of reccomended options for deploying the database on an RDS instance!
-    Type: String
-    Default: db.t2.small
-  RDSMasterUsername:
+  DatabaseMasterUsername:
     Description: Enter a master username for your PostgreSQL database!
     Type: String
     Default: MasterAdmin
-  RDSMasterPassword:
+  DatabaseMasterPassword:
     Description: Enter a secure master password for the PostgreSQL database!
     Type: String
   EnvironmentName:
@@ -26,22 +18,27 @@ Parameters:
     Description: An IP block for your subnet where your EC2 instances will sit!
     Type: String
     Default: 10.0.1.0/24
-  PrivateSubnetCIDR:
-    Description: An IP block for your subnet where your RDS instance will sit!
-    Type: String
-    Default: 10.0.2.0/24
   VPCStackURL:
     Description: The URL of the Cloudformation Template for the VPC. 
     Type: String
     Default: https://deep-sec-haydencardwell.s3.amazonaws.com/VPC-Simple.yaml
-  RDSStackURL:
-    Description: The URL of the Cloudformation Template for the RDS Deployent. 
+  EC2StackURL:
+    Description: The URL of the Cloudformation Template for the EC2 instance and related items.
     Type: String
-    Default: https://deep-sec-haydencardwell.s3.amazonaws.com/RDS.yaml
-  CentOSAMI:
-    Description: The AMI of the CentOS image!
+    Default: https://deep-sec-haydencardwell.s3.amazonaws.com/Ec2.yaml
+  RedHatAMI:
+    Description: The AMI of the RedHat image!
     Type: String
-    Default: ami-65e0e305
+    Default: ami-a8d369c0
+  EC2InstanceType:
+    Description: The instance size of the Deep Security Manager.
+    Type: String
+    Default: t2.micro
+  SSHKey:
+    Description: The key for the Deep Security Manager
+    Type: String
+  UserData:
+    Type: String
 
 Resources:
   VPCStack:
@@ -51,22 +48,19 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         VpcCIDR: !Ref VpcCIDR
         PublicSubnetCIDR: !Ref PublicSubnetCIDR
-        PrivateSubnetCIDR: !Ref PrivateSubnetCIDR
       TemplateURL: !Ref VPCStackURL
       TimeoutInMinutes: 3
 
-  
-
-  RDSStack:
+  EC2Stack:
     Type: "AWS::CloudFormation::Stack"
     Properties:
       Parameters:
-        DatabaseSize: !Ref DatabaseSize
-        DBInstanceClass: !Ref DBInstanceClass
-        RDSMasterUsername: !Ref RDSMasterUsername
-        RDSMasterPassword: !Ref RDSMasterPassword
-        DBSecurityGroupPara: !GetAtt VPCStack.Outputs.DBSecurityGroupId
-        DBSubnetGroupName: !GetAtt VPCStack.Outputs.DBSubnetGroupName
-      TemplateURL: !Ref RDSStackURL
+        RedHatAMI: !Ref RedHatAMI
+        EC2InstanceType: !Ref EC2InstanceType
+        SSHKey: !Ref SSHKey
+        PublicSubnet: !GetAtt VPCStack.Outputs.PublicSubnet
+        UserData: !Ref UserData
+        EC2SecurityGroup: !GetAtt VPCStack.Outputs.EC2SecurityGroup
+      TemplateURL: !Ref EC2StackURL
       TimeoutInMinutes: 20
     DependsOn: VPCStack
