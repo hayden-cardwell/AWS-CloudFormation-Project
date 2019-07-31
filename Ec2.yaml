@@ -13,8 +13,6 @@ Parameters:
   PublicSubnet:
     Description: The subnet for the Deep Security Manager to be launched into
     Type: String
-  UserData:
-    Type: String
   EC2SecurityGroup:
     Type: List<AWS::EC2::SecurityGroup::Id>
 
@@ -58,11 +56,6 @@ Resources:
       ImageId: !Ref RedHatAMI
       InstanceType: !Ref EC2InstanceType
       KeyName: !Ref SSHKey
-      SecurityGroupIds: 
-        - !Join
-          - ','
-          - !Ref EC2SecurityGroup
-      UserData: !Ref UserData
       BlockDeviceMappings:
       - DeviceName: "/dev/sda1"
         Ebs:
@@ -73,4 +66,7 @@ Resources:
         - AssociatePublicIpAddress: true
           DeviceIndex: 0
           SubnetId: !Ref PublicSubnet 
-     
+          GroupSet: 
+            - !Join
+              - ','
+              - !Ref EC2SecurityGroup
