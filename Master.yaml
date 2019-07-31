@@ -37,8 +37,6 @@ Parameters:
   SSHKey:
     Description: The key for the Deep Security Manager
     Type: String
-  UserData:
-    Type: String
 
 Resources:
   VPCStack:
@@ -59,7 +57,6 @@ Resources:
         EC2InstanceType: !Ref EC2InstanceType
         SSHKey: !Ref SSHKey
         PublicSubnet: !GetAtt VPCStack.Outputs.PublicSubnet
-        UserData: !Ref UserData
         EC2SecurityGroup: !GetAtt VPCStack.Outputs.EC2SecurityGroup
       TemplateURL: !Ref EC2StackURL
       TimeoutInMinutes: 20
